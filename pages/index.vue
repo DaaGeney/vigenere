@@ -1,10 +1,10 @@
 <template>
   <v-layout column justify-center align-center>
     <v-flex xs12 sm8 md6>
-      <v-card>
+      <v-card min-width="1000px" max-width="1000px">
         <v-card-title class="headline">VIGENERE</v-card-title>
         <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
+          <!-- <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p> -->
           <v-container fluid>
             <v-textarea
               clearable
@@ -12,12 +12,90 @@
               label="Mensaje encriptado"
               v-model="info.CipherText"
             ></v-textarea>
-          </v-container>
+          </v-container>        
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" @click="descifrar">Continue</v-btn>
-        </v-card-actions>
+          <v-btn color="primary" @click="all">Continue</v-btn>
+        </v-card-actions>     
+      <v-card>
+     
+      <v-tabs vertical>
+        <v-tab>
+          <v-icon left>mdi-account</v-icon>
+          Texto Cifrado
+        </v-tab>
+        <v-tab>
+          <v-icon left>mdi-folder-key</v-icon>
+          Key length
+        </v-tab>
+        <v-tab>
+          <v-icon left>mdi-clipboard-text-play-outline</v-icon>
+          Sub textos
+        </v-tab>
+        <v-tab>
+          <v-icon left>mdi-key</v-icon>
+          Llave sugerida
+        </v-tab>
+        <v-tab>
+          <v-icon left>mdi-text</v-icon>
+          Texto 
+        </v-tab>
+        <v-tab-item>
+          <v-card flat>
+            <v-card-text>
+              <v-textarea
+           
+              v-model="cipher"
+              readonly
+            ></v-textarea>
+                <!-- {{info.CipherText}} -->
+            </v-card-text>
+          </v-card>
+        </v-tab-item>
+        <v-tab-item>
+          <v-card flat>
+            <v-card-text class="headline">
+              <p >
+                {{info.KeyLength}}
+              </p>
+            </v-card-text>
+          </v-card>
+        </v-tab-item>
+        <v-tab-item>
+          <v-card flat>
+            <v-card-text>
+              <v-list-item
+            v-for="i in info.Subtexts"
+            :key="i"
+            link
+          > <v-list-item-title v-text="i"></v-list-item-title></v-list-item>
+          
+            </v-card-text>
+          </v-card>
+        </v-tab-item>
+         <v-tab-item>
+          <v-card flat>
+            <v-card-text>
+            <p class="headline" >
+                {{info.GuessedKey}}
+              </p>
+            </v-card-text>
+          </v-card>
+        </v-tab-item>
+         <v-tab-item>
+          <v-card flat>
+            <v-card-text>
+              <v-textarea
+              v-model="info.PlainText"
+              readonly
+            ></v-textarea>
+              
+            </v-card-text>
+          </v-card>
+        </v-tab-item>
+      </v-tabs>
+    </v-card>
       </v-card>
     </v-flex>
   </v-layout>
@@ -34,6 +112,9 @@ export default {
         GuessedKey: "",
         PlainText: ""
       },
+      cont:3,
+      cipher:"",
+      allRight:false,
       differencePositions: [],
       relativeFrequency: [],
       newFrequency: [],
@@ -41,7 +122,18 @@ export default {
     };
   },
   methods: {
-    descifrar: function() {  
+    all: function(){
+      this.cont=3
+      this.descifrar()
+    },
+    descifrar: function() {
+      if(this.info.CipherText==""){
+        alert("Debes digitar un texto cifrado")
+      }if(this.info.CipherText.length<=11){
+        alert("Mensaje muy corto, digite mensaje mas largo para que el metodo funcione")
+      } 
+      else{
+      this.allRight=true
       this.differencePositions= []
       this.relativeFrequency= []
       this.newFrequency=[]
@@ -50,10 +142,11 @@ export default {
       this.info.Subtexts=[],
       this.info.KeyLength=0
       for (let i = 0; i < this.info.CipherText.length - 2; i++) {
-        let temp =
-          this.info.CipherText[i] +
-          this.info.CipherText[i + 1] +
-          this.info.CipherText[i + 2];
+        var temp =  this.info.CipherText[i] 
+        for(let j = 1; j<this.cont;j++){
+          temp+=this.info.CipherText[i + j]
+        }
+        
         var regex = new RegExp(temp, "ig"),
           result,
           indices = [];
@@ -66,7 +159,8 @@ export default {
           }
         }
         indices = [];
-      }
+        } 
+      
       Array.prototype.unique = (function(a) {
         return function() {
           return this.filter(a);
@@ -76,6 +170,7 @@ export default {
       });
       this.differencePositions = this.differencePositions.unique();
       this.calculate_mcd();
+      }
     },
     calculate_mcd: function() {
       Math.gcd = function() {
@@ -89,16 +184,15 @@ export default {
           return result;
         }
       };
-      let mcd = Math.gcd(
-        this.differencePositions[0],
-        this.differencePositions[1]
-      );
-      for (let i = 2; i < this.differencePositions.length; i++) {
+      let mcd =
+        this.differencePositions[0]
+      for (let i = 1; i < this.differencePositions.length; i++) {
         mcd = Math.gcd(mcd, this.differencePositions[i]);
       }
       this.info.KeyLength = mcd;
-      console.log(mcd);
-      this.calculateSubText();
+      this.cont++
+      this.info.KeyLength>1 ? this.calculateSubText(): this.descifrar()
+      // this.calculateSubText()
     },
     calculateSubText: function() {
       for (let i = 0; i < this.info.KeyLength; i++) {
@@ -173,6 +267,7 @@ export default {
         this.info.PlainText+=this.vigenereDecryption(keyRepeat[i],this.info.CipherText[i])
       }
       console.log(this.info);
+      this.cipher=this.info.CipherText
     },
     vigenereDecryption(valueKey, valueCipher) {
       let values=[["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
